@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>各國文化大不同｜東南亞文化連連看</title>
+  <!-- 載入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 載入 Noto Sans TC 繁體中文字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            warmbg: '#FDF8F0',
+            tealbrand: '#0F766E',
+            coralbrand: '#EA580C',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* 基礎背景與東南亞溫暖圖紋點綴 */
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background-color: #FDF8F0;
+      background-image:
+        radial-gradient(circle at 12% 18%, rgba(20, 184, 166, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 88% 82%, rgba(249, 115, 22, 0.09) 0%, transparent 45%),
+        radial-gradient(#E7D8C3 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 28px 28px;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+    }
+
+    /* 遊戲卡片樣式與過渡 */
+    .match-card {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  box-shadow 0.2s ease,
+                  border-color 0.2s ease,
+                  background-color 0.2s ease;
+      touch-action: none; /* 防止觸控拖曳時捲動頁面 */
+    }
+
+    .match-card:not(.matched):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -8px rgba(15, 118, 110, 0.16);
+    }
+
+    /* 選取中狀態 */
+    .match-card.selected {
+      border-color: #0D9488;
+      background-color: #F0FDFA;
+      box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.22), 0 10px 20px -6px rgba(15, 118, 110, 0.2);
+      transform: scale(1.015);
+    }
+
+    /* 拖曳經過目標時的預覽高亮 */
+    .match-card.drag-over {
+      border-color: #F97316;
+      background-color: #FFF7ED;
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.25);
+      transform: scale(1.02);
+    }
+
+    /* 連接節點圓點 */
+    .connector-dot {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background-color 0.2s ease,
+                  border-color 0.2s ease;
+    }
+
+    .match-card:hover .connector-dot,
+    .match-card.selected .connector-dot,
+    .match-card.drag-over .connector-dot {
+      transform: scale(1.28);
+    }
+
+    /* 答對微幅彈跳動畫 */
+    @keyframes popSuccess {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.045); }
+      75%  { transform: scale(0.985); }
+      100% { transform: scale(1); }
+    }
+    .animate-success {
+      animation: popSuccess 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* 答錯輕微左右搖晃動畫 */
+    @keyframes shakeError {
+      0%, 100% { transform: translateX(0); }
+      20%      { transform: translateX(-7px); }
+      40%      { transform: translateX(7px); }
+      60%      { transform: translateX(-5px); }
+      80%      { transform: translateX(5px); }
+    }
+    .animate-error {
+      animation: shakeError 0.42s ease-in-out;
+      border-color: #EF4444 !important;
+      background-color: #FEF2F2 !important;
+    }
+
+    /* SVG 連線繪製動畫 */
+    @keyframes drawLine {
+      from { stroke-dashoffset: 600; }
+      to   { stroke-dashoffset: 0; }
+    }
+    .line-animate {
+      stroke-dasharray: 600;
+      animation: drawLine 0.35s ease-out forwards;
+    }
+
+    /* 錯誤紅線閃爍 */
+    @keyframes flashRed {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.35; }
+    }
+    .line-error {
+      animation: flashRed 0.25s ease-in-out 2;
+    }
+
+    /* 提示氣泡進出 */
+    @keyframes toastPop {
+      0%   { opacity: 0; transform: translate(-50%, 12px) scale(0.95); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+    .toast-enter {
+      animation: toastPop 0.25s ease-out forwards;
+    }
+
+    /* 彈窗進場動畫 */
+    @keyframes modalIn {
+      0%   { opacity: 0; transform: scale(0.92) translateY(16px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-animate {
+      animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col">
+
+  <!-- 彩帶慶祝畫布（全螢幕覆蓋，不阻擋點擊） -->
+  <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
+
+  <!-- 主容器 -->
+  <div class="w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1 flex flex-col">
+
+    <!-- 頂部標題與說明區 -->
+    <header class="text-center mb-4 sm:mb-6">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-100/90 text-teal-800 text-xs sm:text-sm font-bold tracking-wide mb-2 shadow-sm border border-teal-200/70">
+        <span>🌏 東南亞文化探索課堂</span>
+      </div>
+      <h1 class="text-2xl sm:text-4xl font-black tracking-tight text-slate-800">
+        各國文化大不同
+      </h1>
+      <p class="mt-1.5 text-sm sm:text-base text-slate-600 font-medium">
+        請將左側的<span class="text-teal-700 font-bold">國家</span>與右側對應的<span class="text-orange-600 font-bold">文化或飲食禁忌</span>連起來！（支援點擊配對或直接拖曳畫線）
+      </p>
+    </header>
+
+    <!-- 狀態列與控制功能 -->
+    <section aria-label="遊戲狀態與控制" class="bg-white/90 backdrop-blur-sm border border-amber-200/80 rounded-2xl shadow-sm px-3 sm:px-5 py-3 mb-5 sm:mb-7 flex flex-wrap items-center justify-between gap-3">
+      <!-- 左側統計資訊 -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+        <!-- 進度 -->
+        <div class="flex items-center gap-2 bg-teal-50 border border-teal-200/70 px-3 py-1.5 rounded-xl">
+          <span class="text-teal-600 text-base sm:text-lg">✓</span>
+          <span class="text-xs sm:text-sm text-slate-600 font-medium">已配對</span>
+          <span id="progressText" class="text-sm sm:text-base font-black text-teal-700">0 / 4</span>
+        </div>
+
+        <!-- 計時器 -->
+        <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200/70 px-3 py-1.5 rounded-xl">
+          <span class="text-amber-600 text-base sm:text-lg">⏱️</span>
+          <span id="timerText" class="text-sm sm:text-base font-bold text-amber-800 tabular-nums">00:00</span>
+        </div>
+
+        <!-- 正確率 -->
+        <div class="flex items-center gap-1.5 bg-orange-50 border border-orange-200/70 px-3 py-1.5 rounded-xl">
+          <span class="text-orange-600 text-xs sm:text-sm font-medium">正確率</span>
+          <span id="accuracyText" class="text-sm sm:text-base font-black text-orange-700 tabular-nums">--%</span>
+        </div>
+      </div>
+
+      <!-- 右側功能按鈕 -->
+      <div class="flex items-center gap-2 sm:gap-3 ml-auto">
+        <!-- 音效開關 -->
+        <button id="soundToggleBtn" type="button"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 border border-slate-200 transition cursor-pointer"
+          aria-pressed="true">
+          <span id="soundIcon" class="text-base">🔊</span>
+          <span id="soundLabel">音效：開</span>
+        </button>
+
+        <!-- 重新開始按鈕 -->
+        <button id="resetBtn" type="button"
+          class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white shadow-sm hover:shadow transition cursor-pointer">
+          <span class="text-base">🔀</span>
+          <span>重新開始</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 遊戲主舞台：左右卡片 + SVG 連線層 -->
+    <main class="relative flex-1 flex flex-col justify-center">
+      <!-- 鼓勵提示浮動條（答錯或引導時顯示） -->
+      <div id="feedbackToast"
+        class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-3 rounded-2xl shadow-lg font-bold text-sm sm:text-base flex items-center gap-2 border whitespace-nowrap">
+      </div>
+
+      <!-- 連線區容器 -->
+      <div id="gameBoard" class="relative w-full py-2">
+        <!-- SVG 貝茲曲線層（絕對定位覆蓋整個 gameBoard） -->
+        <svg id="connectionSvg" class="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
+          <!-- 已確認的配對線條群組 -->
+          <g id="confirmedLines"></g>
+          <!-- 暫時錯誤提示紅線群組 -->
+          <g id="errorLines"></g>
+          <!-- 拖曳中的即時曲線 -->
+          <path id="dragPreviewLine" d="" fill="none" stroke="#0D9488" stroke-width="5"
+                stroke-linecap="round" stroke-dasharray="10 8" class="hidden opacity-85"></path>
+        </svg>
+
+        <!-- 左右兩欄排版（即使在手機上也維持左右雙欄以利連連看） -->
+        <div class="relative z-20 grid grid-cols-[minmax(0,4.2fr)_minmax(0,5.8fr)] sm:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] gap-x-9 sm:gap-x-16 md:gap-x-24 lg:gap-x-32 items-stretch">
+
+          <!-- 左欄：國家卡片 -->
+          <div class="flex flex-col justify-between gap-3.5 sm:gap-5">
+            <div class="text-center pb-1">
+              <span class="inline-block px-3 py-1 rounded-full bg-teal-700 text-white text-xs sm:text-sm font-bold tracking-wider shadow-sm">
+                國家
+              </span>
+            </div>
+            <div id="leftColumn" class="flex flex-col gap-3.5 sm:gap-5 flex-1 justify-between">
+              <!-- 由 JavaScript 動態生成 -->
+            </div>
+          </div>
+
+          <!-- 右欄：文化與飲食禁忌卡片 -->
+          <div class="flex flex-col justify-between gap-3.5 sm:gap-5">
+            <div class="text-center pb-1">
+              <span class="inline-block px-3 py-1 rounded-full bg-orange-600 text-white text-xs sm:text-sm font-bold tracking-wider shadow-sm">
+                獨特的文化或飲食禁忌
+              </span>
+            </div>
+            <div id="rightColumn" class="flex flex-col gap-3.5 sm:gap-5 flex-1 justify-between">
+              <!-- 由 JavaScript 動態生成 -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <!-- 頁尾操作小提示 -->
+    <footer class="mt-6 text-center text-xs sm:text-sm text-slate-500">
+      💡 小技巧：點選任一國家再點選右側說明，或直接按住圓點拖曳連線都可以喔！
+    </footer>
+  </div>
+
+  <!-- 過關結算視窗 Modal -->
+  <div id="victoryModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="modal-animate bg-[#FFFDF9] border-2 border-amber-200 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden my-auto">
+      <!-- 頂部慶祝橫幅 -->
+      <div class="bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 px-6 py-5 text-center text-white relative overflow-hidden">
+        <div class="text-4xl sm:text-5xl mb-1">🎉</div>
+        <h2 class="text-2xl sm:text-3xl font-black tracking-wide">太棒了！全部配對成功！</h2>
+        <p class="text-teal-100 text-sm sm:text-base mt-1 font-medium">你已經掌握這 4 個東南亞國家的文化小知識囉</p>
+      </div>
+
+      <!-- 成績數據 -->
+      <div class="px-5 sm:px-7 pt-5 pb-3">
+        <div class="grid grid-cols-3 gap-3 mb-5">
+          <div class="bg-amber-50 border border-amber-200/80 rounded-2xl p-3 text-center">
+            <div class="text-xs text-amber-700 font-bold mb-0.5">花費時間</div>
+            <div id="finalTime" class="text-xl sm:text-2xl font-black text-amber-900 tabular-nums">00:00</div>
+          </div>
+          <div class="bg-teal-50 border border-teal-200/80 rounded-2xl p-3 text-center">
+            <div class="text-xs text-teal-700 font-bold mb-0.5">正確率</div>
+            <div id="finalAccuracy" class="text-xl sm:text-2xl font-black text-teal-800 tabular-nums">100%</div>
+          </div>
+          <div class="bg-orange-50 border border-orange-200/80 rounded-2xl p-3 text-center">
+            <div class="text-xs text-orange-700 font-bold mb-0.5">總嘗試次數</div>
+            <div id="finalAttempts" class="text-xl sm:text-2xl font-black text-orange-800 tabular-nums">4 次</div>
+          </div>
+        </div>
+
+        <!-- 文化小筆記複習清單 -->
+        <div class="mb-5">
+          <h3 class="text-sm sm:text-base font-black text-slate-700 mb-2.5 flex items-center gap-1.5">
+            <span>📖</span> <span>文化小筆記總複習</span>
+          </h3>
+          <div id="reviewList" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+            <!-- 由 JavaScript 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 底部按鈕 -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pb-3">
+          <button id="playAgainBtn" type="button"
+            class="w-full sm:w-auto px-8 py-3 rounded-2xl font-black text-base sm:text-lg text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 shadow-md hover:shadow-lg transition cursor-pointer">
+            🔄 再玩一次
+          </button>
+          <button id="closeModalBtn" type="button"
+            class="w-full sm:w-auto px-6 py-3 rounded-2xl font-bold text-sm sm:text-base text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-95 transition cursor-pointer">
+            查看連線結果
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ==========================================
+     * 遊戲題目與配對資料（完整保留指定文字）
+     * ==========================================
+     */
+    const CULTURE_PAIRS = [
+      {
+        id: 'indonesia',
+        country: '印尼',
+        flagEmoji: '🇮🇩',
+        // 使用精準內嵌 SVG 國旗，避免部分 Windows 系統無法正常顯示國旗 Emoji
+        flagSvg: `
+          <svg viewBox="0 0 36 24" class="w-9 h-6 sm:w-11 sm:h-7 rounded shadow-sm border border-slate-200/80 shrink-0" aria-hidden="true">
+            <rect width="36" height="12" fill="#CE1126"/>
+            <rect y="12" width="36" height="12" fill="#FFFFFF"/>
+          </svg>
+        `,
+        description: '左手視為不潔，吃飯、握手、遞送物品、付錢或招手都必須使用右手（或雙手）',
+        color: '#0D9488',      // 溫潤藍綠
+        lightBg: '#F0FDFA',
+        borderColor: '#14B8A6'
+      },
+      {
+        id: 'thailand',
+        country: '泰國（Thailand）',
+        flagEmoji: '🇹🇭',
+        flagSvg: `
+          <svg viewBox="0 0 36 24" class="w-9 h-6 sm:w-11 sm:h-7 rounded shadow-sm border border-slate-200/80 shrink-0" aria-hidden="true">
+            <rect width="36" height="24" fill="#A51931"/>
+            <rect y="4" width="36" height="16" fill="#F4F5F8"/>
+            <rect y="8" width="36" height="8" fill="#2D2A4A"/>
+          </svg>
+        `,
+        description: '「頭」與「腳」的禁忌，切忌隨意觸摸他人（包含孩童）的頭頂',
+        color: '#EA580C',      // 珊瑚暖橘
+        lightBg: '#FFF7ED',
+        borderColor: '#FB923C'
+      },
+      {
+        id: 'malaysia',
+        country: '馬來西亞（Malaysia）',
+        flagEmoji: '🇲🇾',
+        flagSvg: `
+          <svg viewBox="0 0 36 24" class="w-9 h-6 sm:w-11 sm:h-7 rounded shadow-sm border border-slate-200/80 shrink-0" aria-hidden="true">
+            <rect width="36" height="24" fill="#FFFFFF"/>
+            <g fill="#CC0001">
+              <rect y="0" width="36" height="1.71"/>
+              <rect y="3.43" width="36" height="1.71"/>
+              <rect y="6.86" width="36" height="1.71"/>
+              <rect y="10.29" width="36" height="1.71"/>
+              <rect y="13.71" width="36" height="1.71"/>
+              <rect y="17.14" width="36" height="1.71"/>
+              <rect y="20.57" width="36" height="1.71"/>
+            </g>
+            <rect width="18" height="13.71" fill="#010066"/>
+            <circle cx="7.6" cy="6.86" r="4.1" fill="#FFCC00"/>
+            <circle cx="9.1" cy="6.86" r="3.4" fill="#010066"/>
+            <circle cx="12.6" cy="6.86" r="2.2" fill="#FFCC00"/>
+          </svg>
+        `,
+        description: '有特殊手勢禁忌，在交談時切勿用食指指人',
+        color: '#D97706',      // 熱帶琥珀金
+        lightBg: '#FFFBEB',
+        borderColor: '#F59E0B'
+      },
+      {
+        id: 'vietnam',
+        country: '越南（Vietnam）',
+        flagEmoji: '🇻🇳',
+        flagSvg: `
+          <svg viewBox="0 0 36 24" class="w-9 h-6 sm:w-11 sm:h-7 rounded shadow-sm border border-slate-200/80 shrink-0" aria-hidden="true">
+            <rect width="36" height="24" fill="#DA251D"/>
+            <polygon points="18,4.8 19.65,9.85 24.95,9.85 20.65,12.95 22.3,18 18,14.9 13.7,18 15.35,12.95 11.05,9.85 16.35,9.85" fill="#FFFF00"/>
+          </svg>
+        `,
+        description: '用餐時忌諱大聲咀嚼或吸麵',
+        color: '#2563EB',      // 晴空靛藍
+        lightBg: '#EFF6FF',
+        borderColor: '#60A5FA'
+      }
+    ];
+
+    const ENCOURAGE_MESSAGES = [
+      '再想想看喔！試著換一個配對吧～',
+      '差一點點！再仔細讀一下文化提示喔 💡',
+      '加油！這個禁忌屬於另一個國家喔 🌏',
+      '別氣餒，再試一次一定會答對！'
+    ];
+
+    /**
+     * ==========================================
+     * 遊戲狀態管理
+     * ==========================================
+     */
+    const state = {
+      rightOrder: [],           // 右側打亂後的項目陣列
+      matchedIds: new Set(),    // 已配對成功的 id 集合
+      selectedCard: null,       // 點擊模式選取的卡片 { side: 'left'|'right', id: string }
+      attempts: 0,              // 總嘗試次數
+      secondsElapsed: 0,        // 已過秒數
+      timerInterval: null,      // 計時器 handle
+      gameStarted: false,       // 是否已開始計時
+      gameCompleted: false,     // 是否已完成
+      soundEnabled: true,       // 音效開關
+      // 拖曳連線狀態
+      dragging: {
+        active: false,
+        pointerId: null,
+        sourceSide: null,       // 'left' | 'right'
+        sourceId: null,
+        startX: 0,
+        startY: 0,
+        moved: false,           // 區分點擊與拖曳
+        hoveredTarget: null     // { side, id, element }
+      }
+    };
+
+    // DOM 元素參考
+    const dom = {
+      gameBoard: document.getElementById('gameBoard'),
+      leftColumn: document.getElementById('leftColumn'),
+      rightColumn: document.getElementById('rightColumn'),
+      connectionSvg: document.getElementById('connectionSvg'),
+      confirmedLines: document.getElementById('confirmedLines'),
+      errorLines: document.getElementById('errorLines'),
+      dragPreviewLine: document.getElementById('dragPreviewLine'),
+      progressText: document.getElementById('progressText'),
+      timerText: document.getElementById('timerText'),
+      accuracyText: document.getElementById('accuracyText'),
+      soundToggleBtn: document.getElementById('soundToggleBtn'),
+      soundIcon: document.getElementById('soundIcon'),
+      soundLabel: document.getElementById('soundLabel'),
+      resetBtn: document.getElementById('resetBtn'),
+      feedbackToast: document.getElementById('feedbackToast'),
+      victoryModal: document.getElementById('victoryModal'),
+      finalTime: document.getElementById('finalTime'),
+      finalAccuracy: document.getElementById('finalAccuracy'),
+      finalAttempts: document.getElementById('finalAttempts'),
+      reviewList: document.getElementById('reviewList'),
+      playAgainBtn: document.getElementById('playAgainBtn'),
+      closeModalBtn: document.getElementById('closeModalBtn'),
+      confettiCanvas: document.getElementById('confettiCanvas')
+    };
+
+    /**
+     * ==========================================
+     * Web Audio API 音效合成器（無需外部音檔）
+     * ==========================================
+     */
+    let audioCtx = null;
+
+    function getAudioContext() {
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+          }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    // 輕快答對音效（雙音上揚和弦）
+    function playCorrectSound() {
+      if (!state.soundEnabled) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+      const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.16, now + idx * 0.07 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.28);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.07);
+        osc.stop(now + idx * 0.07 + 0.3);
+      });
+    }
+
+    // 溫和答錯提示音（柔和低雙音）
+    function playWrongSound() {
+      if (!state.soundEnabled) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+      const freqs = [280, 220];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.11);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.11);
+        gain.gain.exponentialRampToValueAtTime(0.14, now + idx * 0.11 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.11 + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.11);
+        osc.stop(now + idx * 0.11 + 0.2);
+      });
+    }
+
+    // 過關慶祝短曲
+    function playVictorySound() {
+      if (!state.soundEnabled) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+      const melody = [
+        { freq: 523.25, time: 0.0, dur: 0.18 },  // C5
+        { freq: 659.25, time: 0.12, dur: 0.18 }, // E5
+        { freq: 783.99, time: 0.24, dur: 0.18 }, // G5
+        { freq: 1046.5, time: 0.38, dur: 0.48 }  // C6
+      ];
+      melody.forEach(note => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(note.freq, now + note.time);
+        gain.gain.setValueAtTime(0.001, now + note.time);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + note.time + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + note.time + note.dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + note.time);
+        osc.stop(now + note.time + note.dur + 0.05);
+      });
+    }
+
+    /**
+     * ==========================================
+     * 工具函式：隨機洗牌（確保不等於原順序）
+     * ==========================================
+     */
+    function shuffleDifferentFromDefault(items) {
+      const shuffled = [...items];
+      let isSame = true;
+      let guard = 0;
+
+      while (isSame && guard < 20) {
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        // 確認沒有與預設順序完全相同
+        isSame = shuffled.every((item, idx) => item.id === items[idx].id);
+        guard++;
+      }
+      return shuffled;
+    }
+
+    function formatTime(totalSeconds) {
+      const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const secs = String(totalSeconds % 60).padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+
+    /**
+     * ==========================================
+     * 計時器控制
+     * ==========================================
+     */
+    function startTimerIfNeeded() {
+      if (state.gameStarted || state.gameCompleted) return;
+      state.gameStarted = true;
+      state.timerInterval = setInterval(() => {
+        state.secondsElapsed++;
+        dom.timerText.textContent = formatTime(state.secondsElapsed);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+      }
+    }
+
+    /**
+     * ==========================================
+     * 提示氣泡（取代 alert）
+     * ==========================================
+     */
+    let toastTimeout = null;
+    function showToast(message, type = 'info') {
+      clearTimeout(toastTimeout);
+      dom.feedbackToast.className =
+        'fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-3 rounded-2xl shadow-lg font-bold text-sm sm:text-base flex items-center gap-2 border whitespace-nowrap toast-enter';
+
+      if (type === 'error') {
+        dom.feedbackToast.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+      } else if (type === 'success') {
+        dom.feedbackToast.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+      } else {
+        dom.feedbackToast.classList.add('bg-amber-50', 'text-amber-900', 'border-amber-200');
+      }
+
+      dom.feedbackToast.textContent = message;
+      dom.feedbackToast.classList.remove('hidden');
+
+      toastTimeout = setTimeout(() => {
+        dom.feedbackToast.classList.add('hidden');
+      }, 1900);
+    }
+
+    /**
+     * ==========================================
+     * 渲染左右卡片與連接節點
+     * ==========================================
+     */
+    function renderBoard() {
+      dom.leftColumn.innerHTML = '';
+      dom.rightColumn.innerHTML = '';
+
+      // 渲染左側國家卡片
+      CULTURE_PAIRS.forEach((item) => {
+        const card = document.createElement('div');
+        card.className =
+          'match-card relative bg-white border-2 border-amber-200/90 rounded-2xl shadow-sm px-3 py-4 sm:px-5 sm:py-5 pr-6 sm:pr-8 flex items-center gap-2.5 sm:gap-4 cursor-pointer min-h-[82px] sm:min-h-[96px]';
+        card.dataset.side = 'left';
+        card.dataset.id = item.id;
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', `${item.country}`);
+
+        card.innerHTML = `
+          <div class="flex items-center gap-2 sm:gap-3.5 min-w-0 flex-1">
+            ${item.flagSvg}
+            <div class="min-w-0">
+              <div class="text-base sm:text-xl font-black text-slate-800 leading-snug break-words">
+                <span class="sr-only">${item.flagEmoji} </span>${item.country}
+              </div>
+            </div>
+          </div>
+          <!-- 配對成功打勾徽章 -->
+          <span class="check-badge hidden shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full text-white text-xs sm:text-sm font-black items-center justify-center shadow-sm">✓</span>
+          <!-- 右側連接圓點 -->
+          <div class="connector-dot absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border-4 border-teal-500 shadow-sm z-30 flex items-center justify-center" data-dot="true">
+            <div class="w-2 h-2 rounded-full bg-teal-500"></div>
+          </div>
+        `;
+
+        bindCardEvents(card);
+        dom.leftColumn.appendChild(card);
+      });
+
+      // 渲染右側文化禁忌卡片（隨機順序）
+      state.rightOrder.forEach((item) => {
+        const card = document.createElement('div');
+        card.className =
+          'match-card relative bg-white border-2 border-amber-200/90 rounded-2xl shadow-sm px-3 py-4 sm:px-5 sm:py-5 pl-6 sm:pl-8 flex items-center justify-between gap-2 sm:gap-3 cursor-pointer min-h-[82px] sm:min-h-[96px]';
+        card.dataset.side = 'right';
+        card.dataset.id = item.id;
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', item.description);
+
+        card.innerHTML = `
+          <!-- 左側連接圓點 -->
+          <div class="connector-dot absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border-4 border-orange-500 shadow-sm z-30 flex items-center justify-center" data-dot="true">
+            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+          </div>
+          <p class="text-sm sm:text-base md:text-lg font-bold text-slate-700 leading-relaxed flex-1">
+            ${item.description}
+          </p>
+          <!-- 配對成功打勾徽章 -->
+          <span class="check-badge hidden shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full text-white text-xs sm:text-sm font-black items-center justify-center shadow-sm">✓</span>
+        `;
+
+        bindCardEvents(card);
+        dom.rightColumn.appendChild(card);
+      });
+    }
+
+    /**
+     * ==========================================
+     * SVG 座標計算與平滑貝茲曲線繪製
+     * ==========================================
+     */
+    function getDotCenter(side, id) {
+      const card = dom.gameBoard.querySelector(`.match-card[data-side="${side}"][data-id="${id}"]`);
+      if (!card) return null;
+      const dot = card.querySelector('.connector-dot');
+      if (!dot) return null;
+
+      const boardRect = dom.gameBoard.getBoundingClientRect();
+      const dotRect = dot.getBoundingClientRect();
+
+      return {
+        x: dotRect.left + dotRect.width / 2 - boardRect.left,
+        y: dotRect.top + dotRect.height / 2 - boardRect.top
+      };
+    }
+
+    // 產生水平切線平滑的三次貝茲曲線路徑
+    function createBezierPath(x1, y1, x2, y2) {
+      const dx = Math.abs(x2 - x1);
+      const offset = Math.max(dx * 0.48, 42);
+      const dir = x2 >= x1 ? 1 : -1;
+      const cx1 = x1 + offset * dir;
+      const cx2 = x2 - offset * dir;
+      return `M ${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}`;
+    }
+
+    // 重繪所有已配對成功的連線（視窗縮放時同步呼叫）
+    function redrawAllConfirmedLines() {
+      dom.confirmedLines.innerHTML = '';
+
+      state.matchedIds.forEach((id) => {
+        const pair = CULTURE_PAIRS.find(p => p.id === id);
+        if (!pair) return;
+
+        const p1 = getDotCenter('left', id);
+        const p2 = getDotCenter('right', id);
+        if (!p1 || !p2) return;
+
+        // 外層柔和光暈線
+        const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        glowPath.setAttribute('d', createBezierPath(p1.x, p1.y, p2.x, p2.y));
+        glowPath.setAttribute('fill', 'none');
+        glowPath.setAttribute('stroke', pair.color);
+        glowPath.setAttribute('stroke-width', '10');
+        glowPath.setAttribute('stroke-linecap', 'round');
+        glowPath.setAttribute('opacity', '0.18');
+        dom.confirmedLines.appendChild(glowPath);
+
+        // 主實線
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', createBezierPath(p1.x, p1.y, p2.x, p2.y));
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', pair.color);
+        path.setAttribute('stroke-width', '4.5');
+        path.setAttribute('stroke-linecap', 'round');
+        dom.confirmedLines.appendChild(path);
+      });
+    }
+
+    // 繪製短暫閃爍的答錯紅線
+    function drawTemporaryErrorLine(leftId, rightId) {
+      const p1 = getDotCenter('left', leftId);
+      const p2 = getDotCenter('right', rightId);
+      if (!p1 || !p2) return;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', createBezierPath(p1.x, p1.y, p2.x, p2.y));
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#EF4444');
+      path.setAttribute('stroke-width', '4.5');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-dasharray', '8 6');
+      path.classList.add('line-error');
+      dom.errorLines.appendChild(path);
+
+      setTimeout(() => {
+        if (path.parentNode) path.parentNode.removeChild(path);
+      }, 650);
+    }
+
+    /**
+     * ==========================================
+     * 核心配對判定邏輯
+     * ==========================================
+     */
+    function updateAccuracyDisplay() {
+      if (state.attempts === 0) {
+        dom.accuracyText.textContent = '--%';
+        return;
+      }
+      const accuracy = Math.round((state.matchedIds.size / state.attempts) * 100);
+      dom.accuracyText.textContent = `${accuracy}%`;
+    }
+
+    function attemptMatch(leftId, rightId) {
+      if (state.matchedIds.has(leftId) || state.matchedIds.has(rightId)) return;
+
+      startTimerIfNeeded();
+      state.attempts++;
+
+      const leftCard = dom.gameBoard.querySelector(`.match-card[data-side="left"][data-id="${leftId}"]`);
+      const rightCard = dom.gameBoard.querySelector(`.match-card[data-side="right"][data-id="${rightId}"]`);
+
+      if (leftId === rightId) {
+        // === 配對成功 ===
+        const pair = CULTURE_PAIRS.find(p => p.id === leftId);
+        state.matchedIds.add(leftId);
+        updateAccuracyDisplay();
+
+        [leftCard, rightCard].forEach((card) => {
+          card.classList.remove('selected', 'drag-over');
+          card.classList.add('matched', 'animate-success', 'cursor-default');
+          card.style.borderColor = pair.borderColor;
+          card.style.backgroundColor = pair.lightBg;
+
+          // 顯示打勾徽章
+          const badge = card.querySelector('.check-badge');
+          if (badge) {
+            badge.classList.remove('hidden');
+            badge.classList.add('inline-flex');
+            badge.style.backgroundColor = pair.color;
+          }
+
+          // 圓點變為對應主題色
+          const dot = card.querySelector('.connector-dot');
+          if (dot) {
+            dot.style.borderColor = pair.color;
+            const innerDot = dot.firstElementChild;
+            if (innerDot) innerDot.style.backgroundColor = pair.color;
+          }
+        });
+
+        redrawAllConfirmedLines();
+        // 幫最新一條線加上流暢繪製效果
+        const latestLine = dom.confirmedLines.lastElementChild;
+        if (latestLine) latestLine.classList.add('line-animate');
+
+        dom.progressText.textContent = `${state.matchedIds.size} / ${CULTURE_PAIRS.length}`;
+        playCorrectSound();
+
+        if (state.matchedIds.size === CULTURE_PAIRS.length) {
+          handleGameVictory();
+        } else {
+          showToast(`答對了！${pair.country}配對成功 ✓`, 'success');
+        }
+      } else {
+        // === 配對失敗 ===
+        updateAccuracyDisplay();
+        playWrongSound();
+        drawTemporaryErrorLine(leftId, rightId);
+
+        [leftCard, rightCard].forEach((card) => {
+          card.classList.remove('selected', 'drag-over');
+          card.classList.add('animate-error');
+          setTimeout(() => card.classList.remove('animate-error'), 500);
+        });
+
+        const msg = ENCOURAGE_MESSAGES[Math.floor(Math.random() * ENCOURAGE_MESSAGES.length)];
+        showToast(msg, 'error');
+      }
+    }
+
+    /**
+     * ==========================================
+     * 雙模式互動：點擊連線 + 拖曳畫線（支援滑鼠與觸控）
+     * ==========================================
+     */
+    function bindCardEvents(card) {
+      // 鍵盤無障礙操作支援
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick(card.dataset.side, card.dataset.id);
+        }
+      });
+
+      // 使用 Pointer Events 同時支援滑鼠與觸控螢幕
+      card.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+        const side = card.dataset.side;
+        const id = card.dataset.id;
+        if (state.matchedIds.has(id)) return;
+
+        startTimerIfNeeded();
+
+        state.dragging.active = true;
+        state.dragging.pointerId = e.pointerId;
+        state.dragging.sourceSide = side;
+        state.dragging.sourceId = id;
+        state.dragging.startX = e.clientX;
+        state.dragging.startY = e.clientY;
+        state.dragging.moved = false;
+        state.dragging.hoveredTarget = null;
+
+        try {
+          card.setPointerCapture(e.pointerId);
+        } catch (err) {
+          // 忽略部分瀏覽器不支援 capture 的情形
+        }
+      });
+    }
+
+    // 全域監聽 pointermove 處理拖曳曲線
+    window.addEventListener('pointermove', (e) => {
+      if (!state.dragging.active || e.pointerId !== state.dragging.pointerId) return;
+
+      const dx = e.clientX - state.dragging.startX;
+      const dy = e.clientY - state.dragging.startY;
+      const dist = Math.hypot(dx, dy);
+
+      // 移動超過 8px 才視為「拖曳畫線」，否則視為「點擊連線」
+      if (!state.dragging.moved && dist > 8) {
+        state.dragging.moved = true;
+        clearSelection();
+        const sourceCard = dom.gameBoard.querySelector(
+          `.match-card[data-side="${state.dragging.sourceSide}"][data-id="${state.dragging.sourceId}"]`
+        );
+        if (sourceCard) sourceCard.classList.add('selected');
+      }
+
+      if (!state.dragging.moved) return;
+
+      const startPt = getDotCenter(state.dragging.sourceSide, state.dragging.sourceId);
+      if (!startPt) return;
+
+      const boardRect = dom.gameBoard.getBoundingClientRect();
+      let endX = e.clientX - boardRect.left;
+      let endY = e.clientY - boardRect.top;
+
+      // 偵測指標下方是否有另一側尚未配對的目標卡片
+      const targetSide = state.dragging.sourceSide === 'left' ? 'right' : 'left';
+      const targetEl = findTargetCardAtPoint(e.clientX, e.clientY, targetSide);
+
+      // 更新目標卡片高亮狀態
+      if (state.dragging.hoveredTarget && state.dragging.hoveredTarget.element !== targetEl) {
+        state.dragging.hoveredTarget.element.classList.remove('drag-over');
+        state.dragging.hoveredTarget = null;
+      }
+
+      if (targetEl && !state.matchedIds.has(targetEl.dataset.id)) {
+        targetEl.classList.add('drag-over');
+        state.dragging.hoveredTarget = {
+          side: targetSide,
+          id: targetEl.dataset.id,
+          element: targetEl
+        };
+        // 磁吸對齊目標卡片的連接圓點，視覺手感更佳
+        const snapPt = getDotCenter(targetSide, targetEl.dataset.id);
+        if (snapPt) {
+          endX = snapPt.x;
+          endY = snapPt.y;
+        }
+      }
+
+      // 更新拖曳預覽貝茲曲線
+      const d = createBezierPath(startPt.x, startPt.y, endX, endY);
+      dom.dragPreviewLine.setAttribute('d', d);
+      dom.dragPreviewLine.classList.remove('hidden');
+    });
+
+    // 全域監聽 pointerup 完成拖曳或觸發點擊
+    window.addEventListener('pointerup', (e) => {
+      if (!state.dragging.active || e.pointerId !== state.dragging.pointerId) return;
+
+      const { sourceSide, sourceId, moved, hoveredTarget } = state.dragging;
+
+      // 隱藏預覽線並清除高亮
+      dom.dragPreviewLine.classList.add('hidden');
+      dom.dragPreviewLine.setAttribute('d', '');
+
+      const sourceCard = dom.gameBoard.querySelector(
+        `.match-card[data-side="${sourceSide}"][data-id="${sourceId}"]`
+      );
+      if (moved && sourceCard) {
+        sourceCard.classList.remove('selected');
+      }
+      if (hoveredTarget && hoveredTarget.element) {
+        hoveredTarget.element.classList.remove('drag-over');
+      }
+
+      // 重置拖曳旗標
+      state.dragging.active = false;
+      state.dragging.pointerId = null;
+      state.dragging.hoveredTarget = null;
+
+      if (moved) {
+        // 拖曳放開在另一側目標上 -> 嘗試配對
+        if (hoveredTarget) {
+          const leftId = sourceSide === 'left' ? sourceId : hoveredTarget.id;
+          const rightId = sourceSide === 'right' ? sourceId : hoveredTarget.id;
+          attemptMatch(leftId, rightId);
+        }
+      } else {
+        // 沒有明顯移動 -> 執行點擊連線邏輯
+        handleCardClick(sourceSide, sourceId);
+      }
+    });
+
+    window.addEventListener('pointercancel', () => {
+      if (!state.dragging.active) return;
+      dom.dragPreviewLine.classList.add('hidden');
+      if (state.dragging.hoveredTarget && state.dragging.hoveredTarget.element) {
+        state.dragging.hoveredTarget.element.classList.remove('drag-over');
+      }
+      clearSelection();
+      state.dragging.active = false;
+      state.dragging.pointerId = null;
+    });
+
+    // 依座標尋找另一側卡片（確保觸控拖曳與 setPointerCapture 下也能準確偵測）
+    function findTargetCardAtPoint(clientX, clientY, targetSide) {
+      const cards = dom.gameBoard.querySelectorAll(`.match-card[data-side="${targetSide}"]`);
+      for (const card of cards) {
+        const rect = card.getBoundingClientRect();
+        // 稍微放寬 14px 觸控判定區（包含圓點範圍）
+        if (
+          clientX >= rect.left - 18 &&
+          clientX <= rect.right + 18 &&
+          clientY >= rect.top - 6 &&
+          clientY <= rect.bottom + 6
+        ) {
+          return card;
+        }
+      }
+      return null;
+    }
+
+    // 點擊連線模式處理
+    function handleCardClick(side, id) {
+      if (state.matchedIds.has(id)) return;
+      startTimerIfNeeded();
+
+      // 若尚未選取任何卡片 -> 選取此卡
+      if (!state.selectedCard) {
+        state.selectedCard = { side, id };
+        const el = dom.gameBoard.querySelector(`.match-card[data-side="${side}"][data-id="${id}"]`);
+        if (el) el.classList.add('selected');
+        return;
+      }
+
+      // 點擊同一張卡片 -> 取消選取
+      if (state.selectedCard.side === side && state.selectedCard.id === id) {
+        clearSelection();
+        return;
+      }
+
+      // 點擊同一側的另一張卡片 -> 切換選取
+      if (state.selectedCard.side === side) {
+        clearSelection();
+        state.selectedCard = { side, id };
+        const el = dom.gameBoard.querySelector(`.match-card[data-side="${side}"][data-id="${id}"]`);
+        if (el) el.classList.add('selected');
+        return;
+      }
+
+      // 點擊另一側卡片 -> 進行配對判定
+      const leftId = side === 'left' ? id : state.selectedCard.id;
+      const rightId = side === 'right' ? id : state.selectedCard.id;
+      clearSelection();
+      attemptMatch(leftId, rightId);
+    }
+
+    /**
+     * ==========================================
+     * 過關慶祝與彩帶（Confetti）動畫
+     * ==========================================
+     */
+    function handleGameVictory() {
+      state.gameCompleted = true;
+      stopTimer();
+      playVictorySound();
+      launchConfetti();
+
+      const accuracy = state.attempts > 0
+        ? Math.round((CULTURE_PAIRS.length / state.attempts) * 100)
+        : 100;
+
+      dom.finalTime.textContent = formatTime(state.secondsElapsed);
+      dom.finalAccuracy.textContent = `${accuracy}%`;
+      dom.finalAttempts.textContent = `${state.attempts} 次`;
+
+      // 建立完整 4 組文化小筆記
+      dom.reviewList.innerHTML = CULTURE_PAIRS.map((item) => `
+        <div class="flex items-start gap-3 p-3 rounded-2xl border bg-white shadow-sm" style="border-color: ${item.borderColor}66;">
+          <div class="mt-0.5">${item.flagSvg}</div>
+          <div class="min-w-0 flex-1">
+            <div class="font-black text-sm sm:text-base" style="color: ${item.color};">${item.country}</div>
+            <div class="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed mt-0.5">${item.description}</div>
+          </div>
+        </div>
+      `).join('');
+
+      setTimeout(() => {
+        dom.victoryModal.classList.remove('hidden');
+      }, 550);
+    }
+
+    // 輕量級 Canvas 彩帶動畫
+    let confettiAnimId = null;
+    function launchConfetti() {
+      const canvas = dom.confettiCanvas;
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const colors = ['#0D9488', '#F97316', '#F59E0B', '#EC4899', '#3B82F6', '#10B981'];
+      const particles = Array.from({ length: 130 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * canvas.height * 0.5,
+        w: 7 + Math.random() * 7,
+        h: 5 + Math.random() * 5,
+        vx: (Math.random() - 0.5) * 4.5,
+        vy: 2.5 + Math.random() * 4.5,
+        rot: Math.random() * 360,
+        vRot: (Math.random() - 0.5) * 10,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        opacity: 1
+      }));
+
+      let frame = 0;
+      if (confettiAnimId) cancelAnimationFrame(confettiAnimId);
+
+      function step() {
+        frame++;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        let alive = false;
+        particles.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.06; // 微幅重力
+          p.rot += p.vRot;
+          if (frame > 130) p.opacity = Math.max(0, p.opacity - 0.015);
+
+          if (p.y < canvas.height + 30 && p.opacity > 0) {
+            alive = true;
+            ctx.save();
+            ctx.globalAlpha = p.opacity;
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rot * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+          }
+        });
+
+        if (alive) {
+          confettiAnimId = requestAnimationFrame(step);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      confettiAnimId = requestAnimationFrame(step);
+    }
+
+    /**
+     * ==========================================
+     * 遊戲初始化與重置
+     * ==========================================
+     */
+    function initGame() {
+      stopTimer();
+      state.rightOrder = shuffleDifferentFromDefault(CULTURE_PAIRS);
+      state.matchedIds.clear();
+      state.selectedCard = null;
+      state.attempts = 0;
+      state.secondsElapsed = 0;
+      state.gameStarted = false;
+      state.gameCompleted = false;
+
+      dom.progressText.textContent = `0 / ${CULTURE_PAIRS.length}`;
+      dom.timerText.textContent = '00:00';
+      dom.accuracyText.textContent = '--%';
+      dom.confirmedLines.innerHTML = '';
+      dom.errorLines.innerHTML = '';
+      dom.dragPreviewLine.classList.add('hidden');
+      dom.victoryModal.classList.add('hidden');
+      dom.feedbackToast.classList.add('hidden');
+
+      renderBoard();
+      // 確保版面完成繪製後同步校正 SVG
+      requestAnimationFrame(redrawAllConfirmedLines);
+    }
+
+    /**
+     * ==========================================
+     * 控制按鈕與響應式視窗監聽
+     * ==========================================
+     */
+    dom.soundToggleBtn.addEventListener('click', () => {
+      state.soundEnabled = !state.soundEnabled;
+      dom.soundToggleBtn.setAttribute('aria-pressed', String(state.soundEnabled));
+      dom.soundIcon.textContent = state.soundEnabled ? '🔊' : '🔇';
+      dom.soundLabel.textContent = state.soundEnabled ? '音效：開' : '音效：關';
+      if (state.soundEnabled) playCorrectSound();
+    });
+
+    dom.resetBtn.addEventListener('click', () => {
+      initGame();
+      showToast('已重新洗牌，開始挑戰吧！🔀', 'info');
+    });
+
+    dom.playAgainBtn.addEventListener('click', () => {
+      initGame();
+    });
+
+    dom.closeModalBtn.addEventListener('click', () => {
+      dom.victoryModal.classList.add('hidden');
+    });
+
+    // 視窗與容器縮放時，即時重新對齊所有 SVG 連線
+    window.addEventListener('resize', () => {
+      redrawAllConfirmedLines();
+      if (dom.confettiCanvas) {
+        dom.confettiCanvas.width = window.innerWidth;
+        dom.confettiCanvas.height = window.innerHeight;
+      }
+    });
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => redrawAllConfirmedLines());
+      ro.observe(dom.gameBoard);
+    }
+
+    // 頁面載入完成後啟動遊戲
+    window.addEventListener('load', initGame);
+  </script>
+</body>
+</html>
